@@ -133,7 +133,7 @@ def get_effect(value):
     elif 2 <= value <= 5:
         return "🐢 Slow Start", "-1 poin"
     elif 6 <= value <= 10:
-        return "⏳ Time Bending", "Launch 1 detik lebih awal"
+        return "⏳ Time Bending", "Launch 3 detik lebih awal"
     elif 11 <= value <= 15:
         return "🌌 Space Bending", "Bebas pilih sisi launch"
     elif 16 <= value <= 19:
