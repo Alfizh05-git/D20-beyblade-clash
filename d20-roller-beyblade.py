@@ -12,10 +12,14 @@ st.set_page_config(
 )
 
 # =====================
-# Session State
+# Session State (History with Migration)
 # =====================
 if "history" not in st.session_state:
     st.session_state.history = []
+else:
+    # Auto-reset history lama (format lama tidak punya key 'p1')
+    if st.session_state.history and "p1" not in st.session_state.history[0]:
+        st.session_state.history = []
 
 # =====================
 # Custom CSS
@@ -111,9 +115,15 @@ def animate_d20_roll(placeholder, duration=1.2, fps=25):
     final = random.randint(1, 20)
 
     if final == 1:
-        placeholder.markdown("<div class='roll fatal'>1</div>", unsafe_allow_html=True)
+        placeholder.markdown(
+            "<div class='roll fatal'>1</div>",
+            unsafe_allow_html=True
+        )
     else:
-        placeholder.markdown(f"<div class='roll'>{final}</div>", unsafe_allow_html=True)
+        placeholder.markdown(
+            f"<div class='roll'>{final}</div>",
+            unsafe_allow_html=True
+        )
 
     return final
 
@@ -143,11 +153,11 @@ st.divider()
 # =====================
 if st.button("🎲 ROLL D20", use_container_width=True):
 
-    c1, c2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-    with c1:
+    with col1:
         box1 = st.empty()
-    with c2:
+    with col2:
         box2 = st.empty()
 
     roll1 = animate_d20_roll(box1)
@@ -188,7 +198,7 @@ if st.button("🎲 ROLL D20", use_container_width=True):
         """, unsafe_allow_html=True)
 
 # =====================
-# History
+# History Section
 # =====================
 st.divider()
 st.subheader("📜 Roll History")
@@ -199,11 +209,14 @@ else:
     for h in st.session_state.history:
         st.markdown(f"""
         <div class="history-card">
-            <b>Roll #{h['round']}</b><br>
-            Player 1: {h['p1']} ({h['e1']})<br>
-            Player 2: {h['p2']} ({h['e2']})
+            <b>Roll #{h.get('round', '?')}</b><br>
+            Player 1: {h.get('p1', '-')} ({h.get('e1', '-')})<br>
+            Player 2: {h.get('p2', '-')} ({h.get('e2', '-')})
         </div>
         """, unsafe_allow_html=True)
 
+# =====================
+# Clear History
+# =====================
 if st.button("🗑️ Clear History"):
     st.session_state.history = []
