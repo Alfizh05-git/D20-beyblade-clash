@@ -12,7 +12,7 @@ st.set_page_config(
 )
 
 # =====================
-# Session State (History)
+# Session State
 # =====================
 if "history" not in st.session_state:
     st.session_state.history = []
@@ -63,12 +63,18 @@ body {
     animation: flash 0.15s infinite alternate, shake 0.15s infinite;
 }
 
+.effect {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    background-color: #26264a;
+}
+
 .history-card {
     background-color: #1a1a2e;
     padding: 10px;
     border-radius: 10px;
     margin-bottom: 8px;
-    font-size: 16px;
 }
 
 @keyframes pulse {
@@ -95,8 +101,7 @@ body {
 # Helper Functions
 # =====================
 def animate_d20_roll(placeholder, duration=1.2, fps=25):
-    frames = int(duration * fps)
-    for _ in range(frames):
+    for _ in range(int(duration * fps)):
         placeholder.markdown(
             f"<div class='roll'>{random.randint(1,20)}</div>",
             unsafe_allow_html=True
@@ -112,11 +117,25 @@ def animate_d20_roll(placeholder, duration=1.2, fps=25):
 
     return final
 
+def get_effect(value):
+    if value == 1:
+        return "☠️ Fatal Wound", "Launch dengan tangan non-dominan"
+    elif 2 <= value <= 5:
+        return "🐢 Slow Start", "-1 poin"
+    elif 6 <= value <= 10:
+        return "⏳ Time Bending", "Launch 1 detik lebih awal"
+    elif 11 <= value <= 15:
+        return "🌌 Space Bending", "Bebas pilih sisi launch"
+    elif 16 <= value <= 19:
+        return "🚀 Head Start", "+1 poin"
+    else:
+        return "🧠 Mind Control", "+1 poin & atur deck lawan"
+
 # =====================
 # Header
 # =====================
 st.markdown('<div class="title">🎲 D20 ARENA</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Klik roll sebanyak yang kamu mau</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Player 1 vs Player 2</div>', unsafe_allow_html=True)
 st.divider()
 
 # =====================
@@ -124,50 +143,67 @@ st.divider()
 # =====================
 if st.button("🎲 ROLL D20", use_container_width=True):
 
-    col1, col2 = st.columns(2)
+    c1, c2 = st.columns(2)
 
-    with col1:
-        roll_box_1 = st.empty()
-    with col2:
-        roll_box_2 = st.empty()
+    with c1:
+        box1 = st.empty()
+    with c2:
+        box2 = st.empty()
 
-    roll1 = animate_d20_roll(roll_box_1)
-    roll2 = animate_d20_roll(roll_box_2)
+    roll1 = animate_d20_roll(box1)
+    roll2 = animate_d20_roll(box2)
 
-    # Save history
+    effect1, desc1 = get_effect(roll1)
+    effect2, desc2 = get_effect(roll2)
+
     st.session_state.history.insert(
         0,
         {
             "round": len(st.session_state.history) + 1,
-            "roll1": roll1,
-            "roll2": roll2
+            "p1": roll1,
+            "p2": roll2,
+            "e1": effect1,
+            "e2": effect2
         }
     )
 
-st.divider()
+    st.divider()
+
+    r1, r2 = st.columns(2)
+
+    with r1:
+        st.markdown(f"""
+        <div class="player-card">
+            <h2>Player 1</h2>
+            <div class="effect"><b>{effect1}</b><br>{desc1}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with r2:
+        st.markdown(f"""
+        <div class="player-card">
+            <h2>Player 2</h2>
+            <div class="effect"><b>{effect2}</b><br>{desc2}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # =====================
-# History Section
+# History
 # =====================
+st.divider()
 st.subheader("📜 Roll History")
 
 if not st.session_state.history:
     st.info("Belum ada roll.")
 else:
     for h in st.session_state.history:
-        st.markdown(
-            f"""
-            <div class="history-card">
-                <b>Roll #{h['round']}</b> — 
-                Roll 1: <b>{h['roll1']}</b> | 
-                Roll 2: <b>{h['roll2']}</b>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.markdown(f"""
+        <div class="history-card">
+            <b>Roll #{h['round']}</b><br>
+            Player 1: {h['p1']} ({h['e1']})<br>
+            Player 2: {h['p2']} ({h['e2']})
+        </div>
+        """, unsafe_allow_html=True)
 
-# =====================
-# Clear History
-# =====================
 if st.button("🗑️ Clear History"):
     st.session_state.history = []
