@@ -12,6 +12,12 @@ st.set_page_config(
 )
 
 # =====================
+# Session State (History)
+# =====================
+if "history" not in st.session_state:
+    st.session_state.history = []
+
+# =====================
 # Custom CSS
 # =====================
 st.markdown("""
@@ -40,12 +46,6 @@ body {
     border-radius: 20px;
     padding: 25px;
     box-shadow: 0 0 20px rgba(155,92,255,0.4);
-    transition: 0.3s;
-}
-
-.winner {
-    border: 2px solid #00ffd5;
-    box-shadow: 0 0 30px #00ffd5;
 }
 
 .roll {
@@ -63,11 +63,12 @@ body {
     animation: flash 0.15s infinite alternate, shake 0.15s infinite;
 }
 
-.effect {
-    margin-top: 10px;
-    padding: 12px;
-    border-radius: 12px;
-    background-color: #26264a;
+.history-card {
+    background-color: #1a1a2e;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 16px;
 }
 
 @keyframes pulse {
@@ -93,7 +94,7 @@ body {
 # =====================
 # Helper Functions
 # =====================
-def animate_d20_roll(placeholder, duration=1.3, fps=25):
+def animate_d20_roll(placeholder, duration=1.2, fps=25):
     frames = int(duration * fps)
     for _ in range(frames):
         placeholder.markdown(
@@ -105,60 +106,17 @@ def animate_d20_roll(placeholder, duration=1.3, fps=25):
     final = random.randint(1, 20)
 
     if final == 1:
-        placeholder.markdown(
-            "<div class='roll fatal'>1</div>",
-            unsafe_allow_html=True
-        )
+        placeholder.markdown("<div class='roll fatal'>1</div>", unsafe_allow_html=True)
     else:
-        placeholder.markdown(
-            f"<div class='roll'>{final}</div>",
-            unsafe_allow_html=True
-        )
+        placeholder.markdown(f"<div class='roll'>{final}</div>", unsafe_allow_html=True)
 
     return final
-
-def get_effect(value):
-    if value == 1:
-        return "☠️ Fatal Wound", "Launch dengan tangan non-dominan"
-    elif 2 <= value <= 5:
-        return "🐢 Slow Start", "-1 poin"
-    elif 6 <= value <= 10:
-        return "⏳ Time Bending", "Launch 1 detik lebih awal"
-    elif 11 <= value <= 15:
-        return "🌌 Space Bending", "Bebas pilih sisi launch"
-    elif 16 <= value <= 19:
-        return "🚀 Head Start", "+1 poin"
-    else:
-        return "🧠 Mind Control", "+1 poin & atur deck lawan"
-
-def suit_winner(s1, s2):
-    rules = {"Batu": "Gunting", "Gunting": "Kertas", "Kertas": "Batu"}
-    if s1 == s2:
-        return None
-    return 1 if rules[s1] == s2 else 2
 
 # =====================
 # Header
 # =====================
 st.markdown('<div class="title">🎲 D20 ARENA</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Roll the dice. Bend reality.</div>', unsafe_allow_html=True)
-st.divider()
-
-# =====================
-# Player Setup
-# =====================
-c1, c2 = st.columns(2)
-
-with c1:
-    p1_name = st.text_input("Nama Pemain 1", "Pemain 1")
-    p1_point = st.number_input("Poin Awal", value=0)
-    suit1 = st.selectbox("Suit", ["Batu", "Gunting", "Kertas"], key="s1")
-
-with c2:
-    p2_name = st.text_input("Nama Pemain 2", "Pemain 2")
-    p2_point = st.number_input("Poin Awal ", value=0)
-    suit2 = st.selectbox("Suit ", ["Batu", "Gunting", "Kertas"], key="s2")
-
+st.markdown('<div class="subtitle">Klik roll sebanyak yang kamu mau</div>', unsafe_allow_html=True)
 st.divider()
 
 # =====================
@@ -166,69 +124,50 @@ st.divider()
 # =====================
 if st.button("🎲 ROLL D20", use_container_width=True):
 
-    rcol1, rcol2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-    with rcol1:
+    with col1:
         roll_box_1 = st.empty()
-    with rcol2:
+    with col2:
         roll_box_2 = st.empty()
 
     roll1 = animate_d20_roll(roll_box_1)
     roll2 = animate_d20_roll(roll_box_2)
 
-    effect1, desc1 = get_effect(roll1)
-    effect2, desc2 = get_effect(roll2)
+    # Save history
+    st.session_state.history.insert(
+        0,
+        {
+            "round": len(st.session_state.history) + 1,
+            "roll1": roll1,
+            "roll2": roll2
+        }
+    )
 
-    affected = []
+st.divider()
 
-    # Conflict rules
-    if effect1 == effect2:
-        if "Time Bending" in effect1:
-            if p1_point != p2_point:
-                affected.append(p1_name if p1_point < p2_point else p2_name)
-            else:
-                affected.append(p1_name if suit_winner(suit1, suit2) == 1 else p2_name)
+# =====================
+# History Section
+# =====================
+st.subheader("📜 Roll History")
 
-        elif "Space Bending" in effect1:
-            if p1_point != p2_point:
-                affected.append(p1_name if p1_point > p2_point else p2_name)
-            else:
-                affected.append(p1_name if suit_winner(suit1, suit2) == 1 else p2_name)
+if not st.session_state.history:
+    st.info("Belum ada roll.")
+else:
+    for h in st.session_state.history:
+        st.markdown(
+            f"""
+            <div class="history-card">
+                <b>Roll #{h['round']}</b> — 
+                Roll 1: <b>{h['roll1']}</b> | 
+                Roll 2: <b>{h['roll2']}</b>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-    # Point changes
-    if 2 <= roll1 <= 5:
-        p1_point -= 1
-    if 2 <= roll2 <= 5:
-        p2_point -= 1
-    if roll1 >= 16:
-        p1_point += 1
-    if roll2 >= 16:
-        p2_point += 1
-
-    # =====================
-    # Result Cards
-    # =====================
-    rc1, rc2 = st.columns(2)
-
-    with rc1:
-        cls = "player-card winner" if p1_name in affected else "player-card"
-        st.markdown(f"""
-        <div class="{cls}">
-            <h2>{p1_name}</h2>
-            <div class="effect"><b>{effect1}</b><br>{desc1}</div>
-            <h3>🏁 Poin: {p1_point}</h3>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with rc2:
-        cls = "player-card winner" if p2_name in affected else "player-card"
-        st.markdown(f"""
-        <div class="{cls}">
-            <h2>{p2_name}</h2>
-            <div class="effect"><b>{effect2}</b><br>{desc2}</div>
-            <h3>🏁 Poin: {p2_point}</h3>
-        </div>
-        """, unsafe_allow_html=True)
-
-    if affected:
-        st.success(f"⚡ Efek khusus berlaku untuk **{affected[0]}**")
+# =====================
+# Clear History
+# =====================
+if st.button("🗑️ Clear History"):
+    st.session_state.history = []
