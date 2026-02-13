@@ -144,7 +144,7 @@ def get_effect(value):
 # =====================
 # Header
 # =====================
-st.markdown('<div class="title">🎲 D20 ARENA</div>', unsafe_allow_html=True)
+st.markdown('<div class="title">🎲 D20 BEYBLADE CLASH</div>', unsafe_allow_html=True)
 st.markdown('<div class="subtitle">Player 1 vs Player 2</div>', unsafe_allow_html=True)
 st.divider()
 
